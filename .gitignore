@@ -4,3 +4,4 @@ build/publish/
 build/Releases/
 *.user
 .vs/
+.claude/

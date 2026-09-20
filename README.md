@@ -1,9 +1,12 @@
 # Lanzador
 
-App de bandeja del sistema (system tray) para Windows: se ejecuta al iniciar sesión, no muestra
-ninguna ventana ni icono en la barra de tareas, y ofrece un menú con accesos rápidos a programas y
-páginas web configurables. Se actualiza sola leyendo las releases publicadas en un repositorio de
-GitHub.
+App de bandeja del sistema (system tray) para Windows, pensada para desplegar en equipos de
+alumnos: se ejecuta al iniciar sesión, no muestra ninguna ventana ni icono en la barra de tareas, y
+al hacer clic en su icono abre un panel con botones de acceso directo a las páginas web y programas
+que el profesor haya configurado. **El alumno no puede editar esos accesos**: el listado va
+compilado dentro del propio `.exe`. Para cambiarlos, el profesor edita el código, publica una nueva
+versión, y esta llega sola a todos los equipos ya instalados mediante auto-actualización (Velopack +
+GitHub Releases).
 
 ## Requisitos para desarrollar
 
@@ -15,34 +18,26 @@ GitHub.
 ```
 lanzador/
 ├─ Lanzador.sln
-├─ src/Lanzador/          # Código de la app (WinForms)
-│  ├─ Program.cs          # Arranque + hooks de instalación de Velopack
-│  ├─ TrayForm.cs         # Icono de bandeja, menú, auto-actualización, recarga en caliente
-│  ├─ ConfigManager.cs    # Lee/crea %AppData%\Lanzador\config.json
-│  ├─ UpdateService.cs    # Comprobación/descarga de actualizaciones (Velopack + GitHub)
-│  ├─ AppSettings.cs      # URL del repo de GitHub para actualizaciones (¡edítalo!)
-│  ├─ Models/MenuEntry.cs # Modelo del JSON de configuración
-│  └─ config.sample.json  # Plantilla que se copia a %AppData% la primera vez
-├─ assets/                # Iconos (app.ico, link.ico)
-└─ build/release.ps1      # Script de empaquetado + publicación en GitHub Releases
+├─ src/Lanzador/            # Código de la app (WinForms)
+│  ├─ Program.cs            # Arranque + hooks de instalación de Velopack (acceso de inicio automático)
+│  ├─ TrayForm.cs           # Icono de bandeja: clic abre el panel, clic derecho da opciones de admin
+│  ├─ LauncherWindow.cs     # Ventana flotante con los botones de acceso
+│  ├─ ConfigLoader.cs       # Lee config.json embebido dentro del .exe (recurso compilado)
+│  ├─ IconResolver.cs       # Resuelve los iconos de cada botón
+│  ├─ Launcher.cs           # Lanza la app/URL de un acceso
+│  ├─ UpdateService.cs      # Comprobación/descarga de actualizaciones (Velopack + GitHub)
+│  ├─ AppSettings.cs        # URL del repo de GitHub para actualizaciones (¡edítalo!)
+│  ├─ Models/MenuEntry.cs   # Modelo del JSON de configuración
+│  └─ config.json           # ← AQUÍ es donde el profesor edita los accesos (recurso embebido)
+├─ assets/                  # Iconos (app.ico, link.ico)
+└─ build/release.ps1        # Script de empaquetado + publicación en GitHub Releases
 ```
 
-## Configurar el menú (apps y páginas web)
+## Configurar los accesos (solo el profesor, en el código)
 
-La lista de accesos se lee de:
-
-```
-%AppData%\Lanzador\config.json
-```
-
-(la primera vez que arranca la app, si el archivo no existe, se crea automáticamente a partir de
-`src/Lanzador/config.sample.json`). Desde el propio menú de la bandeja tienes:
-
-- **Editar configuración...** → abre el JSON con el editor asociado (normalmente el Bloc de notas).
-- **Recargar menú** → por si prefieres recargar manualmente.
-
-Además, la app vigila el archivo y **recarga el menú automáticamente en cuanto lo guardas**, sin
-necesidad de reiniciarla.
+Edita [`src/Lanzador/config.json`](src/Lanzador/config.json). Este archivo se compila **dentro**
+del ejecutable como recurso embebido (no es un archivo suelto que el alumno pueda tocar en su PC).
+Cualquier cambio requiere publicar una nueva versión (ver más abajo) para que llegue a los equipos.
 
 ### Formato del JSON
 
@@ -66,16 +61,24 @@ necesidad de reiniciarla.
 
 Tipos de elemento (`type`):
 
-| type        | Campos usados            | Descripción                                   |
-|-------------|---------------------------|------------------------------------------------|
-| `url`       | `name`, `target`          | Abre la URL en el navegador por defecto        |
-| `app`       | `name`, `target`, `args`  | Lanza un ejecutable (con argumentos opcionales)|
-| `folder`    | `name`, `items`           | Submenú anidado con más elementos              |
-| `separator` | —                          | Línea separadora                                |
+| type        | Campos usados            | Descripción                                              |
+|-------------|---------------------------|-----------------------------------------------------------|
+| `url`       | `name`, `target`          | Botón que abre la URL en el navegador por defecto          |
+| `app`       | `name`, `target`, `args`  | Botón que lanza un ejecutable (con argumentos opcionales)  |
+| `folder`    | `name`, `items`           | Grupo con encabezado y sus propios botones debajo          |
+| `separator` | —                          | Línea separadora                                            |
 
-Campo opcional en cualquier `app`/`url`: `"icon": "C:\\ruta\\a\\icono.ico"` para forzar un icono
+Campo opcional en cualquier `app`/`url`: `"icon": "ruta\\al\\icono.ico"` para forzar un icono
 propio (si no se indica, se usa el icono del propio `.exe` para apps, o un icono genérico de enlace
-para URLs).
+para URLs). Una ruta relativa se resuelve respecto a la carpeta donde está instalado el programa; si
+usas iconos propios, cópialos junto al ejecutable añadiéndolos al `.csproj` como `Content`.
+
+## Cómo funciona la interfaz
+
+- **Clic izquierdo** en el icono de la bandeja → abre/cierra el panel con los botones de acceso.
+  El panel se cierra solo al hacer clic fuera o pulsar Esc.
+- **Clic derecho** → menú reducido solo de administración: "Buscar actualizaciones ahora" y
+  "Salir". No hay ninguna opción para editar los accesos.
 
 ## Ejecutar en modo desarrollo
 
@@ -97,8 +100,8 @@ nada a mano.
 
 ## Publicar una nueva versión (auto-actualización)
 
-La app comprueba actualizaciones cada 6 horas (y también al arrancar) contra las *releases* de un
-repositorio de GitHub, usando [Velopack](https://velopack.io/).
+La app comprueba actualizaciones cada 6 horas (y también 15s después de arrancar) contra las
+*releases* de un repositorio de GitHub, usando [Velopack](https://velopack.io/).
 
 ### 1. Configura tu repositorio
 
@@ -109,40 +112,43 @@ repositorio de GitHub:
 public const string UpdateRepoUrl = "https://github.com/TU-USUARIO/TU-REPO";
 ```
 
-Si el repositorio es **privado**, además define un token en `UpdateRepoToken` (o mejor, no lo
-hardcodees: pásalo por variable de entorno si prefieres evitar tenerlo en el código fuente).
+Si el repositorio es **privado**, además define un token en `UpdateRepoToken` (ese token viajaría
+dentro del `.exe` instalado en cada PC, así que solo dale permiso de lectura). Con un repo
+**público** no hace falta ningún token para que la app compruebe actualizaciones.
 
-### 2. Primera instalación (versión 1.0.0)
+### 2. Primera instalación
 
 ```powershell
 ./build/release.ps1 -Version 1.0.0 -RepoUrl https://github.com/TU-USUARIO/TU-REPO -GithubToken TU_TOKEN
 ```
 
-Esto compila, empaqueta con `vpk` (genera un instalador `LanzadorSetup.exe` en
-`build/Releases/`) y sube la release a GitHub. Descarga y ejecuta `LanzadorSetup.exe` una vez en tu
-PC para hacer la primera instalación (esto es lo que crea el acceso de inicio automático y registra
-la app para futuras actualizaciones). Las siguientes veces, la propia app se actualiza sola.
+Esto compila, empaqueta con `vpk` (genera un instalador `Lanzador-win-Setup.exe` en
+`build/Releases/`) y sube la release a GitHub. Ese instalador es lo que hay que ejecutar una vez en
+cada PC de alumno (por ejemplo, distribuido por script de despliegue/GPO/RMM del centro) para hacer
+la primera instalación. A partir de ahí, cada equipo se actualiza solo.
 
-El token de GitHub necesita el permiso `repo` (o `public_repo` si el repo es público); créalo en
-GitHub → Settings → Developer settings → Personal access tokens. También puedes dejarlo en la
-variable de entorno `GITHUB_TOKEN` en vez de pasarlo por parámetro.
+El `-GithubToken` solo hace falta para **subir** la release (permiso `repo` si el repositorio es
+privado, o `public_repo`/ninguno si es público); no tiene nada que ver con `UpdateRepoToken` del
+paso anterior, que es el que necesitarían los propios PCs para *leer* actualizaciones de un repo
+privado.
 
-### 3. Siguientes versiones
+### 3. Siguientes versiones (cambiar los accesos de los alumnos)
 
-Cambia lo que quieras en el código, y publica con un número de versión superior:
+Edita `src/Lanzador/config.json` con los nuevos accesos, sube el número de versión y publica:
 
 ```powershell
 ./build/release.ps1 -Version 1.0.1 -RepoUrl https://github.com/TU-USUARIO/TU-REPO
 ```
 
-Todas las instalaciones existentes de Lanzador detectarán la nueva versión (hasta 6 horas después,
-o al momento si el usuario pulsa "Buscar actualizaciones ahora" en el menú), la descargarán en
-segundo plano y mostrarán un aviso. Con "Reiniciar y actualizar ahora" en el menú se aplica al
-momento; si no se pulsa nada, se aplica sola la próxima vez que se reinicie la app o el PC.
+Todos los equipos con Lanzador instalado detectarán la nueva versión (hasta 6 horas después, o al
+momento si desde el menú de clic derecho se pulsa "Buscar actualizaciones ahora"), la descargarán en
+segundo plano y mostrarán un aviso. Con "Reiniciar y actualizar ahora" se aplica al momento; si no
+se hace nada, se aplica sola la próxima vez que se reinicie la app o el PC.
 
 ## Notas
 
 - El icono de la bandeja y el de la app (`assets/app.ico`) son un diseño de partida muy simple;
   sustitúyelo por el tuyo cuando quieras (mismo archivo, mismo nombre).
-- Si algún día quieres una interfaz gráfica para editar el menú en vez de tocar el JSON a mano, el
-  sitio natural para añadirla es `TrayForm.OpenConfigForEditing()`.
+- El botón "Salir" del menú de clic derecho cierra la app para esa sesión (volverá a arrancar en el
+  siguiente inicio de Windows). Si en el futuro quieres impedir que el alumno la cierre, ese es el
+  sitio donde habría que actuar (`TrayForm.ExitApplication`).

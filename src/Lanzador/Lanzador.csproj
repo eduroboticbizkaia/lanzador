@@ -20,7 +20,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="config.sample.json" CopyToOutputDirectory="PreserveNewest" />
+    <!-- El listado de accesos va compilado dentro del propio .exe: el alumno no puede editarlo,
+         y una nueva versión (con nuevos enlaces) llega sola a través de la auto-actualización. -->
+    <EmbeddedResource Include="config.json" />
     <None Include="..\..\assets\link.ico" Link="link.ico" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
