@@ -8,7 +8,9 @@ namespace Lanzador;
 /// </summary>
 public sealed class LauncherWindow : Form
 {
-    private const int PanelWidth = 300;
+    private const int PanelWidth = 440;
+    private const int ButtonHeight = 62;
+    private const int IconSize = 34;
 
     private readonly Icon _linkIcon;
     private readonly FlowLayoutPanel _content;
@@ -36,17 +38,17 @@ public sealed class LauncherWindow : Form
             MinimumSize = new Size(PanelWidth, 0),
             MaximumSize = new Size(PanelWidth, Screen.PrimaryScreen!.WorkingArea.Height - 60),
             BackColor = Color.White,
-            Padding = new Padding(8),
+            Padding = new Padding(14),
             Location = new Point(1, 1),
         };
 
         var title = new Label
         {
             Text = "Accesos rápidos",
-            Font = new Font(Font.FontFamily, 10f, FontStyle.Bold),
+            Font = new Font(Font.FontFamily, 15f, FontStyle.Bold),
             ForeColor = Color.FromArgb(60, 60, 60),
             AutoSize = true,
-            Margin = new Padding(4, 2, 4, 10),
+            Margin = new Padding(6, 2, 4, 14),
         };
         _content.Controls.Add(title);
 
@@ -74,9 +76,9 @@ public sealed class LauncherWindow : Form
                     _content.Controls.Add(new Panel
                     {
                         Height = 1,
-                        Width = PanelWidth - 16,
+                        Width = PanelWidth - 28,
                         BackColor = Color.FromArgb(230, 230, 230),
-                        Margin = new Padding(4, 8, 4, 8),
+                        Margin = new Padding(4, 12, 4, 12),
                     });
                     break;
 
@@ -84,12 +86,12 @@ public sealed class LauncherWindow : Form
                     _content.Controls.Add(new Label
                     {
                         Text = entry.Name,
-                        Font = new Font(Font.FontFamily, 9f, FontStyle.Bold),
+                        Font = new Font(Font.FontFamily, 12f, FontStyle.Bold),
                         ForeColor = Color.Gray,
                         AutoSize = true,
-                        Margin = new Padding(4 + indent, 10, 4, 4),
+                        Margin = new Padding(6 + indent, 14, 4, 6),
                     });
-                    BuildEntries(entry.Items ?? new List<MenuEntry>(), indent + 14);
+                    BuildEntries(entry.Items ?? new List<MenuEntry>(), indent + 18);
                     break;
 
                 case MenuEntryType.App:
@@ -104,17 +106,18 @@ public sealed class LauncherWindow : Form
     {
         var button = new Button
         {
-            Text = "  " + entry.Name,
+            Text = "   " + entry.Name,
             AutoSize = false,
-            Width = PanelWidth - 16 - indent,
-            Height = 42,
+            Width = PanelWidth - 28 - indent,
+            Height = ButtonHeight,
+            Font = new Font(Font.FontFamily, 12f),
             TextAlign = ContentAlignment.MiddleLeft,
             ImageAlign = ContentAlignment.MiddleLeft,
             TextImageRelation = TextImageRelation.ImageBeforeText,
-            Padding = new Padding(10, 0, 6, 0),
-            Margin = new Padding(indent, 2, 4, 2),
+            Padding = new Padding(14, 0, 8, 0),
+            Margin = new Padding(indent, 4, 4, 4),
             FlatStyle = FlatStyle.Flat,
-            Image = IconResolver.GetEntryImage(entry, _linkIcon),
+            Image = IconResolver.GetEntryImage(entry, _linkIcon, IconSize),
             Cursor = Cursors.Hand,
             UseVisualStyleBackColor = false,
             BackColor = Color.White,

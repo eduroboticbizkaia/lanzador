@@ -8,7 +8,7 @@ public static class IconResolver
     public static Icon GetTrayIcon()
         => Icon.ExtractAssociatedIcon(Application.ExecutablePath) ?? SystemIcons.Application;
 
-    public static Icon LoadLinkIcon(int size = 24)
+    public static Icon LoadLinkIcon(int size = 32)
     {
         var path = Path.Combine(AppContext.BaseDirectory, "link.ico");
         return File.Exists(path) ? new Icon(path, size, size) : SystemIcons.Application;
