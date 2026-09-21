@@ -1,10 +1,9 @@
 {
   "items": [
-    { "type": "url", "name": "Gmail", "target": "https://mail.google.com" },
-    { "type": "url", "name": "Google Calendar", "target": "https://calendar.google.com" },
+    { "type": "url", "name": "IKASLE", "target": "https://ikasle.edurobotic.es/" },
     { "type": "separator" },
-    { "type": "app", "name": "Bloc de notas", "target": "C:\\Windows\\System32\\notepad.exe" },
-    { "type": "app", "name": "Calculadora", "target": "C:\\Windows\\System32\\calc.exe" },
+    { "type": "url", "name": "SCRATCH", "target": "https://scratch.mit.edu/" },
+    { "type": "url", "name": "MBLOCK", "target": "https://ide.mblock.cc/" },
     { "type": "separator" },
     {
       "type": "folder",
